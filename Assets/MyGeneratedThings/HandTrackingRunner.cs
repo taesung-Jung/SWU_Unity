@@ -1,4 +1,4 @@
-// HandTrackingRunner.cs (회전 안정화 및 회전 폭주 방지 포함)
+// HandTrackingRunner.cs (흔들기 패턴 기반 감지 추가)
 using UnityEngine;
 
 public class HandTrackingRunner : MonoBehaviour
@@ -15,7 +15,6 @@ public class HandTrackingRunner : MonoBehaviour
     public float handSpeedDiffThreshold = 0.1f;
     public int requiredSwingCount = 3;
     public float maxSwingInterval = 0.2f;
-    public float runGracePeriod = 0.5f;
 
     public float turnSpeed = 60.0f;
     [Range(0f, 1f)] public float handTiltThreshold = 0.3f;
@@ -31,7 +30,6 @@ public class HandTrackingRunner : MonoBehaviour
 
     private float swingTimer = 0f;
     private int swingCount = 0;
-    private float runGraceTimer = 0f;
 
     void Start()
     {
@@ -125,22 +123,7 @@ public class HandTrackingRunner : MonoBehaviour
             swingCount = 0;
         }
 
-        // 유예 시간 로직
-        if (swingCount >= requiredSwingCount)
-        {
-            _isRunningState = true;
-            runGraceTimer = runGracePeriod;
-            swingCount = 0;
-        }
-        else if (runGraceTimer > 0f)
-        {
-            runGraceTimer -= Time.deltaTime;
-            _isRunningState = true;
-        }
-        else
-        {
-            _isRunningState = false;
-        }
+        _isRunningState = swingCount >= requiredSwingCount;
 
         if (_isRunningState)
         {
@@ -163,23 +146,15 @@ public class HandTrackingRunner : MonoBehaviour
         Vector3 rightPos = rightHandAnchor.position;
 
         Vector3 handVector = rightPos - leftPos;
-
-        // 회전 입력 안정화: 손 간 거리가 너무 작으면 무시
-        if (handVector.magnitude < 0.1f)
-        {
-            _smoothedTurnInput = 0f;
-            return;
-        }
-
         Vector3 horizontalHandVector = Vector3.ProjectOnPlane(handVector, characterController.transform.up);
         Vector3 playerRight = characterController.transform.right;
 
-        float tiltAmount = Vector3.Dot(horizontalHandVector.normalized, playerRight);
-        tiltAmount = Mathf.Clamp(tiltAmount, -1f, 1f);
+        float tiltAmount = 0f;
+        if (horizontalHandVector.magnitude > 0.05f)
+            tiltAmount = Vector3.Dot(horizontalHandVector.normalized, playerRight);
 
         float turnInput = Mathf.Abs(tiltAmount) > handTiltThreshold ? tiltAmount : 0f;
         _smoothedTurnInput = Mathf.Lerp(_smoothedTurnInput, turnInput, Time.deltaTime * turnSmoothingFactor);
-        _smoothedTurnInput = Mathf.Clamp(_smoothedTurnInput, -1f, 1f);
 
         if (Mathf.Abs(_smoothedTurnInput) > 0.01f)
         {
