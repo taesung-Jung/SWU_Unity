@@ -1320,10 +1320,11 @@ MonoBehaviour:
   leftHandAnchor: {fileID: 0}
   rightHandAnchor: {fileID: 0}
   runSpeed: 2
-  handSpeedThreshold: 0.1
+  handSpeedThreshold: 0.2
   handSpeedDiffThreshold: 0.1
-  requiredSwingCount: 1
+  requiredSwingCount: 2
   maxSwingInterval: 0.1
+  runGracePeriod: 0.5
   turnSpeed: 60
   handTiltThreshold: 0.5
   turnSmoothingFactor: 5
